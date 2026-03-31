@@ -1,0 +1,72 @@
+diff --git a/ios/StreamVideoReactNative.m b/ios/StreamVideoReactNative.m
+index 7dd4fd998832ff1e37cce4aa198f56aad0d03a13..e763091b352861d4691935c29bb9cf71acf863d5 100644
+--- a/ios/StreamVideoReactNative.m
++++ b/ios/StreamVideoReactNative.m
+@@ -683,62 +683,21 @@ - (void)audioSessionInterrupted:(NSNotification *)notification {
+ }
+ 
+ #pragma mark - Screen Share Audio Mixing
++/**
++ * Audio-only app: screen-share audio mixing isn't required.
++ * Some Stream WebRTC builds don't expose `ScreenShareAudioMixer` / `screenShareAudioMixer`,
++ * so we no-op these methods to keep iOS builds compiling.
++ */
+ 
+ RCT_EXPORT_METHOD(startScreenShareAudioMixing:(RCTPromiseResolveBlock)resolve
+                   reject:(RCTPromiseRejectBlock)reject)
+ {
+-    WebRTCModule *webrtcModule = [self.bridge moduleForClass:[WebRTCModule class]];
+-    WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
+-
+-    ScreenShareAudioMixer *mixer = webrtcModule.audioDeviceModule.screenShareAudioMixer;
+-
+-    // Wire mixer as capturePostProcessingDelegate on the audio processing module.
+-    id<RTCAudioProcessingModule> apmId = options.audioProcessingModule;
+-    if (apmId && [apmId isKindOfClass:[RTCDefaultAudioProcessingModule class]]) {
+-        RTCDefaultAudioProcessingModule *apm = (RTCDefaultAudioProcessingModule *)apmId;
+-        apm.capturePostProcessingDelegate = mixer;
+-        NSLog(@"[SSAMixer] Set capturePostProcessingDelegate on APM");
+-    } else {
+-        NSLog(@"[SSAMixer] WARNING: No RTCDefaultAudioProcessingModule available, mixing will not work");
+-    }
+-
+-    [mixer startMixing];
+-
+-    // Wire audio buffer handler on the active capturer → mixer.enqueue
+-    InAppScreenCapturer *capturer = options.activeInAppScreenCapturer;
+-    if (capturer) {
+-        capturer.audioBufferHandler = ^(CMSampleBufferRef sampleBuffer) {
+-            [mixer enqueue:sampleBuffer];
+-        };
+-    }
+-
+     resolve(nil);
+ }
+ 
+ RCT_EXPORT_METHOD(stopScreenShareAudioMixing:(RCTPromiseResolveBlock)resolve
+                   reject:(RCTPromiseRejectBlock)reject)
+ {
+-    WebRTCModule *webrtcModule = [self.bridge moduleForClass:[WebRTCModule class]];
+-    WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
+-
+-    // Stop feeding audio to the mixer
+-    InAppScreenCapturer *capturer = options.activeInAppScreenCapturer;
+-    if (capturer) {
+-        capturer.audioBufferHandler = nil;
+-    }
+-
+-    // Stop mixing
+-    ScreenShareAudioMixer *mixer = webrtcModule.audioDeviceModule.screenShareAudioMixer;
+-    [mixer stopMixing];
+-
+-    // Clear capturePostProcessingDelegate
+-    id<RTCAudioProcessingModule> apmId = options.audioProcessingModule;
+-    if (apmId && [apmId isKindOfClass:[RTCDefaultAudioProcessingModule class]]) {
+-        RTCDefaultAudioProcessingModule *apm = (RTCDefaultAudioProcessingModule *)apmId;
+-        apm.capturePostProcessingDelegate = nil;
+-        NSLog(@"[SSAMixer] Cleared capturePostProcessingDelegate on APM");
+-    }
+-
+     resolve(nil);
+ }
+ 

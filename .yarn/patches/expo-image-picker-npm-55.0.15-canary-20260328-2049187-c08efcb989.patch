@@ -1,0 +1,26 @@
+diff --git a/ios/ImagePickerPermissionRequesters.swift b/ios/ImagePickerPermissionRequesters.swift
+index ad92115ac5af6bf0f02faed5adabe5bc0035f07a..c439a573aed3500483dd429d40dc77ce90206bf6 100644
+--- a/ios/ImagePickerPermissionRequesters.swift
++++ b/ios/ImagePickerPermissionRequesters.swift
+@@ -2,7 +2,6 @@
+ 
+ import Photos
+ import ExpoModulesCore
+-internal import React
+ 
+ public class CameraPermissionRequester: NSObject, EXPermissionsRequester {
+   static public func permissionType() -> String {
+@@ -20,10 +19,11 @@ public class CameraPermissionRequester: NSObject, EXPermissionsRequester {
+     var status: EXPermissionStatus
+     let cameraUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSCameraUsageDescription")
+     if cameraUsageDescription == nil {
+-      RCTFatal(RCTErrorWithMessage("""
++      // Avoid RCTFatal/RCTErrorWithMessage: they are not visible to Swift when React is consumed as an xcframework.
++      assertionFailure("""
+       This app is missing 'NSCameraUsageDescription', video services will fail. \
+       Ensure this key exists in the app's Info.plist
+-      """))
++      """)
+       systemStatus = AVAuthorizationStatus.denied
+     } else {
+       systemStatus = AVCaptureDevice.authorizationStatus(for: AVMediaType.video)
